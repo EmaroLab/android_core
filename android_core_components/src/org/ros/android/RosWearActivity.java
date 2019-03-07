@@ -16,12 +16,15 @@
 
 package org.ros.android;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
+
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.IBinder;
+import android.support.wearable.activity.WearableActivity;
 
 import com.google.common.base.Preconditions;
 
@@ -35,17 +38,18 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+
 /**
  * @author damonkohler@google.com (Damon Kohler)
  */
-public abstract class RosActivity extends Activity {
+public abstract class RosWearActivity extends WearableActivity {
 
   protected static final int MASTER_CHOOSER_REQUEST_CODE = 0;
 
   private final NodeMainExecutorServiceConnection nodeMainExecutorServiceConnection;
   private final String notificationTicker;
   private final String notificationTitle;
-  private Class<?> masterChooserActivity = MasterChooser.class;
+  private Class<?> masterChooserWearActivity = MasterChooserWear.class;
   private int masterChooserRequestCode = MASTER_CHOOSER_REQUEST_CODE;
   protected NodeMainExecutorService nodeMainExecutorService;
 
@@ -53,6 +57,7 @@ public abstract class RosActivity extends Activity {
    * Default Activity Result callback - compatible with standard {@link MasterChooser}
    */
   private OnActivityResultCallback onActivityResultCallback = new OnActivityResultCallback() {
+    @SuppressLint("StaticFieldLeak")
     @Override
     public void execute(int requestCode, int resultCode, Intent data) {
       if (resultCode == RESULT_OK) {
@@ -86,7 +91,7 @@ public abstract class RosActivity extends Activity {
           new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-              RosActivity.this.init(nodeMainExecutorService);
+              RosWearActivity.this.init(nodeMainExecutorService);
               return null;
             }
           }.execute();
@@ -122,8 +127,8 @@ public abstract class RosActivity extends Activity {
         public void onShutdown(NodeMainExecutorService nodeMainExecutorService) {
           // We may have added multiple shutdown listeners and we only want to
           // call finish() once.
-          if (!RosActivity.this.isFinishing()) {
-            RosActivity.this.finish();
+          if (!RosWearActivity.this.isFinishing()) {
+            RosWearActivity.this.finish();
           }
         }
       };
@@ -141,31 +146,34 @@ public abstract class RosActivity extends Activity {
       serviceListener = null;
     }
 
-    public NodeMainExecutorServiceListener getServiceListener()
-    {
+    public NodeMainExecutorServiceListener getServiceListener() {
       return serviceListener;
     }
 
-  };
+  }
+
+  ;
 
   /**
    * Standard constructor.
    * Use this constructor to proceed using the standard {@link MasterChooser}.
+   *
    * @param notificationTicker Title to use in Ticker notifications.
-   * @param notificationTitle Title to use in notifications.
+   * @param notificationTitle  Title to use in notifications.
    */
-  protected RosActivity(String notificationTicker, String notificationTitle) {
+  protected RosWearActivity(String notificationTicker, String notificationTitle) {
     this(notificationTicker, notificationTitle, null);
   }
 
   /**
    * Custom Master URI constructor.
    * Use this constructor to skip launching {@link MasterChooser}.
+   *
    * @param notificationTicker Title to use in Ticker notifications.
-   * @param notificationTitle Title to use in notifications.
-   * @param customMasterUri URI of the ROS master to connect to.
+   * @param notificationTitle  Title to use in notifications.
+   * @param customMasterUri    URI of the ROS master to connect to.
    */
-  protected RosActivity(String notificationTicker, String notificationTitle, URI customMasterUri) {
+  protected RosWearActivity(String notificationTicker, String notificationTitle, URI customMasterUri) {
     super();
     this.notificationTicker = notificationTicker;
     this.notificationTitle = notificationTitle;
@@ -178,14 +186,15 @@ public abstract class RosActivity extends Activity {
    * The specified activity shall return a result that can be handled by a custom callback.
    * See {@link #setOnActivityResultCallback(OnActivityResultCallback)} for more information about
    * how to handle custom request codes and results.
+   *
    * @param notificationTicker Title to use in Ticker notifications.
-   * @param notificationTitle Title to use in notifications.
-   * @param activity {@link Activity} to launch instead of {@link MasterChooser}.
-   * @param requestCode Request identifier to start the given {@link Activity} for a result.
+   * @param notificationTitle  Title to use in notifications.
+   * @param activity           {@link Activity} to launch instead of {@link MasterChooser}.
+   * @param requestCode        Request identifier to start the given {@link Activity} for a result.
    */
-  protected RosActivity(String notificationTicker, String notificationTitle, Class<?> activity, int requestCode) {
+  protected RosWearActivity(String notificationTicker, String notificationTitle, Class<?> activity, int requestCode) {
     this(notificationTicker, notificationTitle);
-    masterChooserActivity = activity;
+    masterChooserWearActivity = activity;
     masterChooserRequestCode = requestCode;
   }
 
@@ -220,7 +229,7 @@ public abstract class RosActivity extends Activity {
     new AsyncTask<Void, Void, Void>() {
       @Override
       protected Void doInBackground(Void... params) {
-        RosActivity.this.init(nodeMainExecutorService);
+        RosWearActivity.this.init(nodeMainExecutorService);
         return null;
       }
     }.execute();
@@ -232,8 +241,7 @@ public abstract class RosActivity extends Activity {
    * and a {@link NodeMainExecutorService} has started. Your {@link NodeMain}s
    * should be started here using the provided {@link NodeMainExecutor}.
    *
-   * @param nodeMainExecutor
-   *          the {@link NodeMainExecutor} created for this {@link Activity}
+   * @param nodeMainExecutor the {@link NodeMainExecutor} created for this {@link Activity}
    */
   protected abstract void init(NodeMainExecutor nodeMainExecutor);
 
@@ -241,7 +249,7 @@ public abstract class RosActivity extends Activity {
     Preconditions.checkState(getMasterUri() == null);
     // Call this method on super to avoid triggering our precondition in the
     // overridden startActivityForResult().
-    super.startActivityForResult(new Intent(this, masterChooserActivity), masterChooserRequestCode);
+    super.startActivityForResult(new Intent(this, masterChooserWearActivity), masterChooserRequestCode);
   }
 
   public URI getMasterUri() {
@@ -279,7 +287,8 @@ public abstract class RosActivity extends Activity {
   /**
    * Set a callback that will be called onActivityResult.
    * Custom callbacks should be able to handle custom request codes configured
-   * in custom Activity constructor {@link #RosActivity(String, String, Class, int)}.
+   * in custom Activity constructor {@link #RosWearActivity(String, String, Class, int)}.
+   *
    * @param callback Action that will be performed when this Activity gets a result.
    */
   public void setOnActivityResultCallback(OnActivityResultCallback callback) {
