@@ -39,7 +39,7 @@ public class IPAddressKeyListener extends NumberKeyListener {
    * Display a number-only soft keyboard.
    */
   public int getInputType() {
-    return InputType.TYPE_CLASS_TEXT;
+    return InputType.TYPE_CLASS_PHONE;
   }
 
   /**

@@ -16,6 +16,7 @@
 
 package org.ros.android;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 
 import android.content.ComponentName;
@@ -56,6 +57,7 @@ public abstract class RosActivity extends WearableActivity {
    * Default Activity Result callback - compatible with standard {@link MasterChooser}
    */
   private OnActivityResultCallback onActivityResultCallback = new OnActivityResultCallback() {
+    @SuppressLint("StaticFieldLeak")
     @Override
     public void execute(int requestCode, int resultCode, Intent data) {
       if (resultCode == RESULT_OK) {
